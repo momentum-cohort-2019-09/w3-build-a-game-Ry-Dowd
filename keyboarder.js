@@ -24,4 +24,4 @@ class Keyboarder {
   }
 }
 
-Keyboarder.KEYS = { LEFT: 37, RIGHT: 39, UP: 38, DOWN: 40, S: 83 }
+Keyboarder.KEYS = { LEFT: 37, A: 65, RIGHT: 39, D: 68, UP: 38, W: 87, DOWN: 40, S: 83,SPACE: 32 }
