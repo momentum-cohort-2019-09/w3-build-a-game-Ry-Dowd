@@ -6,12 +6,16 @@ class Game {
             x: this.canvas.width,
             y: this.canvas.height
         }
+        this.keyboarder = new Keyboarder()
+        this.gameOver = true
         this.sprites = []
         this.score = 0
-        // this.threshold = 0
         this.isAttacking = false
+        this.started = false
     }
     startGame() {
+        this.sprites = []
+        this.score = 0
         this.player = new Player(this, this.size)
         this.sprites.push(this.player)
         this.gameOver = false
@@ -21,7 +25,10 @@ class Game {
             this.draw(this.screen, this.size)
             requestAnimationFrame(tick)
         }
-        tick()
+        if(!this.started){
+            this.started = true
+            tick()
+        }
     }
     addSprite(sprite) {
         this.sprites.push(sprite)
@@ -56,6 +63,12 @@ class Game {
         }
         for (let sprite of this.sprites) {
             sprite.update()
+        }
+        if (this.gameOver) {
+            if (this.keyboarder.isDown(Keyboarder.KEYS.SPACE)) {
+                // window.cancelAnimationFrame()
+                this.startGame()
+            }
         }
     }
     render(screen, sprite) {
@@ -215,3 +228,4 @@ function colliding(b1, b2) {
         b2.type !== "bad"
     )
 }
+game = new Game()
