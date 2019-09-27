@@ -8,17 +8,20 @@ class Game {
         }
         this.sprites = []
         this.score = 0
-        this.threshold = 0
+        // this.threshold = 0
         this.isAttacking = false
     }
     startGame() {
-        let player = new Player(this, this.size)
-        this.sprites.push(player)
-        this.threshold = 0
+        this.player = new Player(this, this.size)
+        this.sprites.push(this.player)
+        this.gameOver = false
+        this.threshold = .95
         let tick = () => {
             this.update(this.threshold)
             this.draw(this.screen, this.size)
-            requestAnimationFrame(tick)
+            if (!this.gameOver) {
+                requestAnimationFrame(tick)
+            }
         }
         tick()
     }
@@ -32,7 +35,23 @@ class Game {
         }
     }
     update(threshold) {
-        let notDead
+        if (this.isAttacking) {
+            let dying = []
+            for (let sprite of this.sprites) {
+                if (colliding(this.weapon, sprite)) {
+                    dying.push(sprite)
+                    this.sprites.push(new Spatter(this, sprite.center))
+                }
+            }
+            this.score += dying.length
+            this.sprites = this.sprites.filter(sprite => !dying.includes(sprite))
+            document.querySelector(".points").textContent = this.score
+        }
+        for (let sprite of this.sprites) {
+            if (colliding(this.player, sprite)) {
+                this.gameOver = true
+            }
+        }
         if (Math.random() > threshold) {
             this.spawnEnemy()
         }
@@ -75,32 +94,34 @@ class Player {
         window.playerPosition = this.center
     }
     update() {
-        if (this.keyboarder.isDown(Keyboarder.KEYS.LEFT) || this.keyboarder.isDown(Keyboarder.KEYS.A)) {
-            this.center.x -= 2
-        }
-        if (this.keyboarder.isDown(Keyboarder.KEYS.UP) || this.keyboarder.isDown(Keyboarder.KEYS.W)) {
-            this.center.y -= 2
-        }
-        if (this.keyboarder.isDown(Keyboarder.KEYS.DOWN) || this.keyboarder.isDown(Keyboarder.KEYS.S)) {
-            this.center.y += 2
-        }
-        if (this.keyboarder.isDown(Keyboarder.KEYS.RIGHT) || this.keyboarder.isDown(Keyboarder.KEYS.D)) {
-            this.center.x += 2
-        }
-        if (this.keyboarder.isDown(Keyboarder.KEYS.SPACE)) {
-            this.useItem()
-        }
-        if (this.center.x >= this.game.size.x) {
-            this.center.x = this.game.size.x
-        }
-        if (this.center.y >= this.game.size.y) {
-            this.center.y = this.game.size.y
-        }
-        if (this.center.x <= 0) {
-            this.center.x = 0
-        }
-        if (this.center.y <= 0) {
-            this.center.y = 0
+        if (!this.game.gameOver) {
+            if (this.keyboarder.isDown(Keyboarder.KEYS.LEFT) || this.keyboarder.isDown(Keyboarder.KEYS.A)) {
+                this.center.x -= 2
+            }
+            if (this.keyboarder.isDown(Keyboarder.KEYS.UP) || this.keyboarder.isDown(Keyboarder.KEYS.W)) {
+                this.center.y -= 2
+            }
+            if (this.keyboarder.isDown(Keyboarder.KEYS.DOWN) || this.keyboarder.isDown(Keyboarder.KEYS.S)) {
+                this.center.y += 2
+            }
+            if (this.keyboarder.isDown(Keyboarder.KEYS.RIGHT) || this.keyboarder.isDown(Keyboarder.KEYS.D)) {
+                this.center.x += 2
+            }
+            if (this.keyboarder.isDown(Keyboarder.KEYS.SPACE)) {
+                this.useItem()
+            }
+            if (this.center.x >= this.game.size.x) {
+                this.center.x = this.game.size.x
+            }
+            if (this.center.y >= this.game.size.y) {
+                this.center.y = this.game.size.y
+            }
+            if (this.center.x <= 0) {
+                this.center.x = 0
+            }
+            if (this.center.y <= 0) {
+                this.center.y = 0
+            }
         }
     }
     useItem() {
@@ -119,12 +140,14 @@ class Enemy {
         this.size = { x: size, y: size }
         this.velocity = velocity
         this.color = "green"
+        this.type = "bad"
+        this.theta = 0
         this.angularVelocity = this.aim(window.playerPosition)
     }
     aim(player) {
-        let theta = Math.atan2(player.y - this.center.y, player.x - this.center.x)
-        let xVel = this.velocity * Math.cos(theta)
-        let yVel = this.velocity * Math.sin(theta)
+        this.theta = Math.atan2(player.y - this.center.y, player.x - this.center.x)
+        let xVel = this.velocity * Math.cos(this.theta)
+        let yVel = this.velocity * Math.sin(this.theta)
 
         return { x: xVel, y: yVel }
     }
@@ -134,10 +157,10 @@ class Enemy {
     }
 }
 class Powerup {
-    constructor(game, position, type) {
+    constructor(game, position, item) {
         this.game = game
         this.position = position
-        this.type = type
+        this.item = item
     }
 
 }
@@ -146,9 +169,9 @@ class HurtBox {
         this.game = game
         this.center = center
         this.color = "rgba(0,200,125,.5)"
-        // this.type = type
         this.tickCount = 0
         this.size = { x: 50, y: 50 }
+        this.game.weapon = this
     }
     update() {
         this.tickCount++
@@ -157,17 +180,29 @@ class HurtBox {
         if (this.tickCount === 25) {
             this.size = { x: 0, y: 0 }
         }
-        if(this.tickCount%10 === 0){
+        if (this.tickCount % 10 === 0) {
             document.querySelector(".cooldown").textContent += "◊◊"
-            
-            // loadbar = loadbar.push("//")
-            // document.querySelector(".cooldown").textContent = loadbar.join("")
         }
         if (this.tickCount > 100) {
-            this.game.sprites = this.game.sprites.filter(elem => elem!==this)
+            this.game.sprites = this.game.sprites.filter(elem => elem !== this)
             this.game.isAttacking = false
             document.querySelector(".cooldown").classList.remove("red")
             document.querySelector(".cooldown").textContent = "READY TO SWING"
+        }
+    }
+}
+class Spatter {
+    constructor(game, center) {
+        this.game = game
+        this.center = center
+        this.color = "rgba(255,0,0,.2)"
+        this.tickCount = 0
+        this.size = { x: 15, y: 15 }
+    }
+    update() {
+        this.tickCount++
+        if (this.tickCount > 40) {
+            this.game.sprites = this.game.sprites.filter(elem => elem !== this)
         }
     }
 }
@@ -176,7 +211,8 @@ function colliding(b1, b2) {
         b1 === b2 ||
         b1.center.x + b1.size.x / 2 < b2.center.x - b2.size.x / 2 ||
         b1.center.y + b1.size.y / 2 < b2.center.y - b2.size.y / 2 ||
-        b1.center.x - b1.size.x / 2 < b2.center.x + b2.size.x / 2 ||
-        b1.center.y - b1.size.y / 2 < b2.center.y + b2.size.y / 2
+        b1.center.x - b1.size.x / 2 > b2.center.x + b2.size.x / 2 ||
+        b1.center.y - b1.size.y / 2 > b2.center.y + b2.size.y / 2 ||
+        b2.type !== "bad"
     )
 }
