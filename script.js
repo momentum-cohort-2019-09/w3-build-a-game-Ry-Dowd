@@ -1,19 +1,23 @@
 class Game {
     constructor() {
-        const canvas = document.querySelector("#canvas")
-        const screen = canvas.getContext('2d')
+        this.canvas = document.querySelector("#canvas")
+        this.screen = canvas.getContext('2d')
         this.size = {
-            x: canvas.width,
-            y: canvas.height
+            x: this.canvas.width,
+            y: this.canvas.height
         }
         this.sprites = []
         this.score = 0
-        this.sprites.push(new Player(this, this.size))
-        let threshold = .95
+        this.threshold = 0
+    }
+    startGame(){
+        let player = new Player(this, this.size)
+        this.sprites.push(player)
+        this.threshold = .95
         let tick = () => {
             console.log("ticktickticktick")
-            this.update(threshold)
-            this.draw(screen, this.size)
+            this.update(this.threshold)
+            this.draw(this.screen, this.size)
             requestAnimationFrame(tick)
         }
         tick()
@@ -99,6 +103,7 @@ class Player {
     }
     useItem(){
 
+        this.game.addSprite(new HurtBox(this.game, this.center, this.inventory[0].type))
     }
 }
 class Enemy {
@@ -129,4 +134,16 @@ class Powerup {
         this.type = type
     }
 
+}
+class HurtBox{
+    constructor(game, center, type){
+        this.game = game
+        this.center = center
+        this.type = type
+        this.tickCount = 0
+        this.size = {x:40, y:40}
+    }
+    update(){
+
+    }
 }

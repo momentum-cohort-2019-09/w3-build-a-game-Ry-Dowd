@@ -15,7 +15,10 @@ body{
 }
 canvas{
     border:3px solid red;
-    background:lightgrey;
+    background:linear-gradient(
+        rgba(165, 142, 42, 0.4),
+        rgba(165, 142, 42, 0.4)),
+        url("https://image.freepik.com/free-vector/vector-abstract-geometric-shape-from-triangles_2065-276.jpg");
 }
 .game-info{
     display:flex;
