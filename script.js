@@ -9,13 +9,13 @@ class Game {
         this.sprites = []
         this.score = 0
         this.threshold = 0
+        this.isAttacking = false
     }
-    startGame(){
+    startGame() {
         let player = new Player(this, this.size)
         this.sprites.push(player)
-        this.threshold = .95
+        this.threshold = 0
         let tick = () => {
-            console.log("ticktickticktick")
             this.update(this.threshold)
             this.draw(this.screen, this.size)
             requestAnimationFrame(tick)
@@ -32,6 +32,7 @@ class Game {
         }
     }
     update(threshold) {
+        let notDead
         if (Math.random() > threshold) {
             this.spawnEnemy()
         }
@@ -58,7 +59,8 @@ class Game {
             spawnPoint.x = this.size.x
             spawnPoint.y += offset
         }
-        this.addSprite(new Enemy(this, spawnPoint, .6 + Math.random() / 2))
+        let attribute = Math.random()
+        this.addSprite(new Enemy(this, spawnPoint, 15 - attribute * 6, .6 + attribute / 2))
     }
 }
 
@@ -94,23 +96,27 @@ class Player {
         if (this.center.y >= this.game.size.y) {
             this.center.y = this.game.size.y
         }
-        if (this.center.x <= 0){
+        if (this.center.x <= 0) {
             this.center.x = 0
         }
-        if(this.center.y <= 0){
+        if (this.center.y <= 0) {
             this.center.y = 0
         }
     }
-    useItem(){
-
-        this.game.addSprite(new HurtBox(this.game, this.center, this.inventory[0].type))
+    useItem() {
+        if (!this.game.isAttacking) {
+            document.querySelector(".cooldown").classList.add("red")
+            document.querySelector(".cooldown").textContent = "◊◊"
+            this.game.isAttacking = true
+            this.game.addSprite(new HurtBox(this.game, this.center))
+        }
     }
 }
 class Enemy {
-    constructor(game, position, velocity) {
+    constructor(game, position, size, velocity) {
         this.game = game
         this.center = position
-        this.size = { x: 10, y: 10 }
+        this.size = { x: size, y: size }
         this.velocity = velocity
         this.color = "green"
         this.angularVelocity = this.aim(window.playerPosition)
@@ -135,15 +141,42 @@ class Powerup {
     }
 
 }
-class HurtBox{
-    constructor(game, center, type){
+class HurtBox {
+    constructor(game, center) {
         this.game = game
         this.center = center
-        this.type = type
+        this.color = "rgba(0,200,125,.5)"
+        // this.type = type
         this.tickCount = 0
-        this.size = {x:40, y:40}
+        this.size = { x: 50, y: 50 }
     }
-    update(){
-
+    update() {
+        this.tickCount++
+        let loadbar = []
+        console.log("attack tick " + this.tickCount)
+        if (this.tickCount === 25) {
+            this.size = { x: 0, y: 0 }
+        }
+        if(this.tickCount%10 === 0){
+            document.querySelector(".cooldown").textContent += "◊◊"
+            
+            // loadbar = loadbar.push("//")
+            // document.querySelector(".cooldown").textContent = loadbar.join("")
+        }
+        if (this.tickCount > 100) {
+            this.game.sprites = this.game.sprites.filter(elem => elem!==this)
+            this.game.isAttacking = false
+            document.querySelector(".cooldown").classList.remove("red")
+            document.querySelector(".cooldown").textContent = "READY TO SWING"
+        }
     }
+}
+function colliding(b1, b2) {
+    return !(
+        b1 === b2 ||
+        b1.center.x + b1.size.x / 2 < b2.center.x - b2.size.x / 2 ||
+        b1.center.y + b1.size.y / 2 < b2.center.y - b2.size.y / 2 ||
+        b1.center.x - b1.size.x / 2 < b2.center.x + b2.size.x / 2 ||
+        b1.center.y - b1.size.y / 2 < b2.center.y + b2.size.y / 2
+    )
 }
