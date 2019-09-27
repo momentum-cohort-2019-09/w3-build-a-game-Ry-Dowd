@@ -19,9 +19,7 @@ class Game {
         let tick = () => {
             this.update(this.threshold)
             this.draw(this.screen, this.size)
-            if (!this.gameOver) {
-                requestAnimationFrame(tick)
-            }
+            requestAnimationFrame(tick)
         }
         tick()
     }
@@ -50,6 +48,7 @@ class Game {
         for (let sprite of this.sprites) {
             if (colliding(this.player, sprite)) {
                 this.gameOver = true
+                this.threshold = 0
             }
         }
         if (Math.random() > threshold) {
@@ -197,7 +196,7 @@ class Spatter {
         this.center = center
         this.color = "rgba(255,0,0,.2)"
         this.tickCount = 0
-        this.size = { x: 15, y: 15 }
+        this.size = { x: 20, y: 20 }
     }
     update() {
         this.tickCount++
