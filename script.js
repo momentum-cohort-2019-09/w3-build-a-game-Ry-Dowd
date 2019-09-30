@@ -19,6 +19,7 @@ class Game {
         this.player = new Player(this, this.size)
         this.sprites.push(this.player)
         this.gameOver = false
+        this.isAttacking = false
         this.threshold = .95
         let tick = () => {
             this.update(this.threshold)
@@ -187,7 +188,6 @@ class HurtBox {
     }
     update() {
         this.tickCount++
-        let loadbar = []
         console.log("attack tick " + this.tickCount)
         if (this.tickCount === 25) {
             this.size = { x: 0, y: 0 }
@@ -229,3 +229,4 @@ function colliding(b1, b2) {
     )
 }
 game = new Game()
+game.startGame()
